@@ -1,4 +1,4 @@
-// index.h
+// api.h
 
 #define _GNU_SOURCE
 #include "bptree.h"

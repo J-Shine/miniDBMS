@@ -18,7 +18,7 @@ STATIC_LIB:=$(LIBS)libbpt.a
 SRCS_FOR_LIB:= \
 	$(SRCDIR)bptree.c \
 	$(SRCDIR)file.c \
-	$(SRCDIR)index.c
+	$(SRCDIR)api.c
 
 OBJS_FOR_LIB:=$(SRCS_FOR_LIB:.c=.o) 
 

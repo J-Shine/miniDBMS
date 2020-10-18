@@ -1,6 +1,6 @@
-// index.c
+// api.c
 
-#include "index.h"
+#include "api.h"
 
 int open_table(char * pathname){
 	fd = file_open(pathname);
