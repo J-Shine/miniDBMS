@@ -18,7 +18,7 @@
  * printing each entire rank on a separate
  * line, finishing with the leaves.
  */
-page_t * queue = NULL;
+//page_t * queue = NULL;
 
 /* The user can toggle on and off the "verbose"
  * property, which causes the pointer addresses
@@ -150,19 +150,20 @@ int path_to_root( page_t * root, page_t * child ) {
  * to the keys also appear next to their respective
  * keys, in hexadecimal notation.
  */
-void print_tree( page_t * root ) {
+void print_tree( header_page_t * header ) {
 
-    page_t * p = NULL;
+    page_t * p = (page_t *)malloc(sizeof(page_t));
     int i = 0;
     int rank = 0;
     int new_rank = 0;
 
-    if (root == NULL) {
+    if (header->root_start == 0) {
         printf("Empty tree.\n");
         return;
     }
     queue = NULL;
-    enqueue(root);
+    internal_page_t * internal_page = (internal_page_t *)malloc(sizeof(internal_page_t));
+    enqueue(internal_page);
     while( queue != NULL ) {
         p = dequeue();
         if (p->parent != NULL && p == p->parent->pointers[0]) {
@@ -172,8 +173,6 @@ void print_tree( page_t * root ) {
                 printf("\n");
             }
         }
-        if (verbose_output) 
-            printf("(%lx)", (unsigned long)p);
         for (i = 0; i < p->num_keys; i++) {
             if (verbose_output)
                 printf("%lx ", (unsigned long)p->pointers[i]);
@@ -182,12 +181,6 @@ void print_tree( page_t * root ) {
         if (!p->is_leaf)
             for (i = 0; i <= p->num_keys; i++)
                 enqueue(p->pointers[i]);
-        if (verbose_output) {
-            if (p->is_leaf) 
-                printf("%lx ", (unsigned long)p->pointers[order - 1]);
-            else
-                printf("%lx ", (unsigned long)p->pointers[p->num_keys]);
-        }
         printf("| ");
     }
     printf("\n");

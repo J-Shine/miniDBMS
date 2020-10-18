@@ -59,7 +59,7 @@ int main( int argc, char ** argv ) {
 
     char * input_file;
     page_t * root;
-    char * path = "sample_10000.db";
+    char * path = "debug";
     int64_t key;
     char value[120];
     char instruction;
@@ -98,6 +98,7 @@ int main( int argc, char ** argv ) {
     */
     page_t * pages;
 
+    int64_t cnt = 1;
     int td;
     char ret_value[120];
     printf("> ");
@@ -117,12 +118,21 @@ int main( int argc, char ** argv ) {
 		}
 		printf("key|value found: %ld | %s\n", key, ret_value);
 		break;
-	/*
+	case 'i':
+		//while(cnt < 33){
+		//	key = cnt; value[0] = 'a';
+		//	db_insert(key, value);
+		//	cnt++;
+		//}
+		scanf("%ld", &key);
+		scanf("%s", value);
+		db_insert(key, value);
+		break;
         case 'd':
-            scanf("%ld", &key);
-            root = delete(root, key);
-            print_tree(root);
-            break;
+            	scanf("%ld", &key);
+            	db_delete(key);
+            	break;
+	/*
         case 'i':
             scanf("%ld", &key);
             scanf("%s", value);

@@ -138,7 +138,7 @@ extern int order;
  * printing each entire rank on a separate
  * line, finishing with the leaves.
  */
-extern page_t * queue;
+//:extern internal_page_t * queue;
 
 /* The user can toggle on and off the "verbose"
  * property, which causes the pointer addresses

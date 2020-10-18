@@ -1,5 +1,6 @@
 // index.h
 
+#define _GNU_SOURCE
 #include "bptree.h"
 #include<string.h>
 

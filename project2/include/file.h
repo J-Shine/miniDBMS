@@ -30,6 +30,11 @@ typedef struct page_t page_t;
 extern int fd;
 extern page_t free_pages; 
 
+// open file
+int file_open(char * pathname);
+
+// copy page from src to des
+void copy_page_t(page_t * des, page_t * src);
 
 // Allocate an on-disk page from the free page list
 pagenum_t file_alloc_page();
