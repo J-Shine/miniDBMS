@@ -89,7 +89,6 @@ int find(int64_t key, char * ret) {
 	    free(leaf);
 	    return -1;
     }
-    //printf("leaf->num_keyssss %d\n", leaf->num_keys); 
     for (i = 0; i < leaf->num_keys; i++)
         if (leaf->key_value[i].key == key) break;
     if (i == leaf->num_keys) {
@@ -132,26 +131,30 @@ int find_leaf(int64_t key, leaf_page_t * leaf_page, pagenum_t * pagenum) {
         return -1; 
     }
     *pagenum = header_page->root_start;
-    //printf("pagenum inside %ld\n", *pagenum);
     page_t * internal_c = (page_t *)malloc(sizeof(page_t));
     file_read_page(header_page->root_start, internal_c);
     internal_page_t * internal_page = (internal_page_t *)internal_c;
-    //printf("hhhhhh->root_start: %ld\n", header_page->root_start);
 
     while(!internal_page->is_leaf){
-	    int i = -1;
-	    while(i < internal_page->num_keys - 1){
-		    if(key < internal_page->key_pagenum[i + 1].key && i == -1){
+	    
+	    int i = 0;
+	    while(i < internal_page->num_keys){
+		    /*
+		    printf("i %d\n", i);
+		    printf("key %ld\n", key);
+		    printf("key_pagenum %ld\n", internal_page->key_pagenum[i + 1].key);
+		    */
+		    if(key < internal_page->key_pagenum[i].key){
 			    break;
 		    }
-		    if(key >= internal_page->key_pagenum[i + 1].key) {
+		    if(key >= internal_page->key_pagenum[i].key) {
 			    i++;
 		    }
 	    }
-	    if(i == -1)
+	    if(i == 0)
 		    *pagenum = internal_page->one_more_pagenum;
 	    else
-		    *pagenum = internal_page->key_pagenum[i].pagenum;
+		    *pagenum = internal_page->key_pagenum[i - 1].pagenum;
 	    
 	    file_read_page(*pagenum, internal_c);
 	    internal_page = (internal_page_t *)internal_c;
@@ -297,7 +300,7 @@ int insert_into_leaf( leaf_page_t * leaf, int64_t key, char * value, pagenum_t *
     int i, insertion_point;
 
     insertion_point = 0;
-    while (insertion_point < leaf->num_keys && leaf->key_value[insertion_point].key < key){
+    while (insertion_point < leaf->num_keys && leaf->key_value[insertion_point].key <= key){
         insertion_point++;
     }
 
@@ -599,23 +602,30 @@ int insert_into_internal_after_splitting(internal_page_t * internal, int64_t key
     make_internal(new_internal, parent_pagenum, new_pagenum);
 
     // move records to temp
-    insertion_index = INTERNAL_ORDER - 2;
+    insertion_index = INTERNAL_ORDER - 1;
 
+    int h = 0;
     for (i = 0, j = 0; i < internal->num_keys; i++, j++) {
         if (j == insertion_index) j++;
         temp_keys[j] = internal->key_pagenum[i].key;
         temp_pagenums[j] = internal->key_pagenum[i].pagenum;
+	h++;
     }
-    //printf("outside the make_internal1\n");
 
     // insert new record to temp
     temp_keys[insertion_index] = key;
     temp_pagenums[insertion_index] = record_pagenum;
-    //printf("outside the make_internal2\n");
+    h++;
 
     internal->num_keys = 0;
     split = cut(INTERNAL_ORDER - 1);
-    //printf("outside the make_internal3\n");
+    /*
+    for(int k = 0; k < h; k++){
+	   printf("temp_keys: [%d], %ld\n", k, temp_keys[k]); 
+	   printf("temp_pagenums: [%d], %ld\n", k, temp_pagenums[k]); 
+    }
+    printf("split: %d\n", split);
+    */
 
     for (i = 0; i < split; i++) {
         internal->key_pagenum[i].key = temp_keys[i];
@@ -623,10 +633,22 @@ int insert_into_internal_after_splitting(internal_page_t * internal, int64_t key
         internal->num_keys = internal->num_keys + 1;
     }
 
-    for (i = split, j = 0; i < INTERNAL_ORDER - 1; i++, j++) {
+    int64_t parent_inserting_key = temp_keys[i];
+    new_internal->one_more_pagenum = temp_pagenums[i]; 
+
+    page_t * child = (page_t *)malloc(sizeof(page_t));
+    file_read_page(temp_pagenums[i], child);
+    child->buffer[0] = *new_pagenum; 
+    file_write_page(temp_pagenums[i], child);
+    free(child);
+    i++;
+
+    
+    for (j = 0; i < INTERNAL_ORDER; i++, j++) {
         new_internal->key_pagenum[j].key = temp_keys[i];
-        new_internal->key_pagenum[i].pagenum = temp_pagenums[i];
+        new_internal->key_pagenum[j].pagenum = temp_pagenums[i];
         new_internal->num_keys = new_internal->num_keys + 1;
+	// change parent pagenum to new parent pagenum
 	page_t * child = (page_t *)malloc(sizeof(page_t));
 	file_read_page(temp_pagenums[i], child);
 	child->buffer[0] = *new_pagenum; 
@@ -642,22 +664,20 @@ int insert_into_internal_after_splitting(internal_page_t * internal, int64_t key
     internal->right_sib_pagenum = *new_pagenum;
     new_internal->right_sib_pagenum = 0; 
 
-    // write internal 
+    // write internal
+    printf("internal_splitting: this_pagenum %ld\n", this_pagenum); 
     page_t * internal_c = (page_t *)internal;
     file_write_page(this_pagenum, internal_c);
 
     // write new_internal
+    printf("internal_splitting: *new_pagenum %ld\n", *new_pagenum); 
     page_t * new_internal_c = (page_t *)new_internal;
     file_write_page(*new_pagenum, new_internal_c);
 
-
-
-
     // insert key into parent
-    new_key = new_internal->key_pagenum[0].key;
     parent_pagenum = internal->parent_pagenum;
 
-    insert_into_parent(internal_c, new_key, new_internal_c, parent_pagenum, this_pagenum, *new_pagenum);
+    insert_into_parent(internal_c, parent_inserting_key, new_internal_c, parent_pagenum, this_pagenum, *new_pagenum);
 
     free(temp_keys);
     free(temp_pagenums);
@@ -678,6 +698,7 @@ int delete(int64_t key) {
 
     int found_value = find(key, rtn_value);
     int found_leaf = find_leaf(key, key_leaf, leaf_pagenum);
+    printf("*leaf_pagenum in delete() %ld\n", *leaf_pagenum);
     if (found_value == 0) {
         delete_entry_leaf(*leaf_pagenum, key);
         free(key_leaf);
@@ -738,9 +759,10 @@ int delete_entry_leaf(pagenum_t leaf_pagenum, int64_t key) {
 	file_read_page(leaf_pagenum, leaf_c);
 	leaf_page_t * leaf = (leaf_page_t *)leaf_c;
 
-    if (leaf->num_keys > 0)
+    if (leaf->num_keys > 0){
     	    free(leaf_c);
 	    return 0;
+    }
 
     /* Case:  all keys are deleted.
      * merge is needed.
@@ -748,6 +770,7 @@ int delete_entry_leaf(pagenum_t leaf_pagenum, int64_t key) {
 
     pagenum_t internal_pagenum = leaf->parent_pagenum;
 
+    file_free_page(leaf_pagenum);
     delete_entry_internal(internal_pagenum, key);
 
     free(leaf_c);
@@ -837,7 +860,6 @@ int adjust_root_leaf(pagenum_t root_pagenum) {
 	    header_page_t * header = (header_page_t *)header_c;
 
 	    header->root_start = 0;
-	    header->num_pages = header->num_pages - 1;
 
 	    header_c = (page_t *)header;
 	    file_write_page(0, header_c);
@@ -849,6 +871,8 @@ int adjust_root_leaf(pagenum_t root_pagenum) {
 
 
 int delete_entry_internal(pagenum_t this_pagenum, int64_t key){
+	printf("delete_entry pagenum : %ld\n", this_pagenum);
+	printf("delete key: %ld\n", key);
 	
 	// read this internal page
 	page_t * this_page_c = (page_t*)malloc(sizeof(page_t));
@@ -856,10 +880,10 @@ int delete_entry_internal(pagenum_t this_pagenum, int64_t key){
 	internal_page_t * this_page = (internal_page_t *)this_page_c;
 
 	int root_check = 0;
-    root_check = remove_entry_from_internal(this_pagenum, key);
-    if(root_check == 1)
-	    return 0;
-
+        root_check = remove_entry_from_internal(this_pagenum, key);
+        if(root_check == -1){
+		return 0;
+	}
     /* Case:  deletion from a page_t below the root.
      * (Rest of function body.)
      */
@@ -875,54 +899,93 @@ int delete_entry_internal(pagenum_t this_pagenum, int64_t key){
 	file_read_page(this_pagenum, this_page_c);
 	this_page = (internal_page_t *)this_page_c;
 
-    if (this_page->num_keys > 0)
+    if (this_page->num_keys > 0){
+	    printf("this_page->num_keys > 0: true\n");
     	    free(this_page_c);
 	    return 0;
+    }
 
     /* Case:  all keys are deleted.
      * merge is needed.
      */
 
-	    if(this_page->num_keys == 0 && this_page->one_more_pagenum == 0){
-	    	    this_pagenum = this_page->parent_pagenum;
-		    delete_entry_internal(this_pagenum, key);
-	    }
-	    if(this_page->num_keys == 0 && this_page->one_more_pagenum != 0){
-		    // redistribute
-	    }
+    if(this_page->num_keys == 0){
+	    // change internal 
+	    this_pagenum = this_page->parent_pagenum;
+	    delete_entry_internal(this_pagenum, key);
+	    file_free_page(this_pagenum);
+    }
 
     free(this_page_c);
     
     return 0;
 }
 
+int64_t find_parent_key(pagenum_t this_pagenum, int64_t key){
+	page_t * this_c = (page_t *)malloc(sizeof(page_t));
+	file_read_page(this_pagenum, this_c);
+	internal_page_t * this_page = (internal_page_t *)this_c;
+	int j = 0;
+	while(this_page->key_pagenum[j].key < key && j < this_page->num_keys)
+		j++;
+	if(j > 0){
+		j--;
+		free(this_c);
+		return this_page->key_pagenum[j].key;
+	}
+	else{
+		pagenum_t parent_pagenum = this_page->parent_pagenum;
+		free(this_c);
+		return find_parent_key(parent_pagenum, key);
+	}
+}
+	
+
+
 int remove_entry_from_internal(pagenum_t this_pagenum, int64_t key){
 
-	//printf("start remove_entry_from_internal\n");
+	printf("start remove_entry_from_internal\n");
 	// read internal 
 	page_t * internal_c = (page_t *)malloc(sizeof(page_t));
 	file_read_page(this_pagenum, internal_c);
 	internal_page_t * internal = (internal_page_t *)internal_c;
 	// Remove the key & value and shift other keys & values accordingly.
+	/*
+	if(internal->num_keys == 1 && internal->one_more_pagenum > 0 && internal->key_pagenum[0].pagenum == 0){
+		temp_pagenum = internal->one_more_pagenum;
+		internal->key_pagenum[0].key = 0;
+		internal->one_more_pagenum = 0;
+		internal->num_keys = 0;
+	}
+	*/
+	// key가 1개이고 one_more_pagenum에도 pagenum이 존재하는 경우
+        pagenum_t temp_pagenum = 0;
+	if(internal->num_keys == 1 && internal->one_more_pagenum > 0){
+		temp_pagenum = internal->one_more_pagenum;
+		printf("11\n");
+	}
         int i = 0;
-        pagenum_t temp_pagenum;
-        while (internal->key_pagenum[i].key != key){
+	printf("this_pagenum %ld\n", this_pagenum);
+	printf("internal->num_keys: %d\n", internal->num_keys);
+        while (internal->key_pagenum[i].key < key && i < internal->num_keys){
+		printf("22\n");
 		i++;
-	        if(internal->num_keys == 1 && internal->one_more_pagenum == 0){
-			temp_pagenum = internal->key_pagenum[i].pagenum;
-		}
 	}
     	for (++i; i < internal->num_keys; i++){
+		printf("33\n");
         	internal->key_pagenum[i - 1].key = internal->key_pagenum[i].key;
         	internal->key_pagenum[i - 1].pagenum = internal->key_pagenum[i].pagenum;
 	}
 
     	// erase last key and value for tidyness
-    	internal->key_pagenum[i - 1].key = 0;
-    	internal->key_pagenum[i - 1].pagenum = 0;
+	i--;
+    	internal->key_pagenum[i].key = 0;
+    	internal->key_pagenum[i].pagenum = 0;
+		printf("44\n");
 
     	// One key fewer.
-    	internal->num_keys = internal->num_keys - 1;
+	internal->num_keys = internal->num_keys - 1;
+
 
     	// write internal 
     	internal_c = (page_t *)internal;
@@ -931,46 +994,52 @@ int remove_entry_from_internal(pagenum_t this_pagenum, int64_t key){
     	page_t * header_c = (page_t *)malloc(sizeof(page_t));
     	file_read_page(0, header_c);
     	header_page_t * header = (header_page_t *)header_c;
+
+	// adjust root
     	if(header->root_start == this_pagenum){ 
+		printf("55\n");
 		internal_page_t * root = internal;
-		if(root->num_keys == 0 && root->one_more_pagenum != 0){
-			temp_pagenum = root->one_more_pagenum;
-		}
 		if(root->num_keys == 0){
+		printf("66\n");
 			file_free_page(this_pagenum);
 			
 			header->root_start = temp_pagenum;
 	    		header_c = (page_t *)header;
 	    		file_write_page(0, header_c);
 
-			return 1;
+			return -1;
 		}
+    		// write internal 
+    		internal_c = (page_t *)internal;
+    		file_write_page(this_pagenum, internal_c);
+
+
+    		return -1;
 	}
+
+	/* key가 1개이고 one_more_pagenum에도 존재하는 경우
+	 * one_more_pagenum을 key_pagenum[0].pagenum으로 옮기고 key를 새로 생성
+	 */
+
+	int64_t nk;
+		printf("77\n");
+	if(temp_pagenum > 0){
+		printf("88\n");
+		nk = find_parent_key(internal->parent_pagenum, key);
+		printf("find_parent_key: parent key: %ld\n", nk);
+		internal->key_pagenum[0].key = nk;
+		internal->key_pagenum[0].pagenum = temp_pagenum;
+		internal->one_more_pagenum = 0;
+		internal->num_keys = 1;
+
+    		// write internal 
+    		internal_c = (page_t *)internal;
+    		file_write_page(this_pagenum, internal_c);
+		return 0;
+	}
+	
+	return 0;
 }
-    /*
-
-
-    
-    // write internal 
-    internal_c = (page_t *)internal;
-    file_write_page(this_pagenum, internal_c);
-
-    printf("end remove_entry_from_leaf\n");
-
-    return 0;
-}
-
-    if(key < internal->key_pagenum[i].key){
-	    file_free_page(this_pagenum);
-	    internal->one_more_pagenum = 0;
-	    internal_c = (page_t *)internal;
-	    file_write_page(this_pagenum, internal_c);
-
-	    free(internal_c);
-	    return 0;
-    }
-    */
-
 
 /* Prints the B+ tree in the command
  * line in level (rank) order, with the 
@@ -981,10 +1050,9 @@ int remove_entry_from_internal(pagenum_t this_pagenum, int64_t key){
  * to the keys also appear next to their respective
  * keys, in hexadecimal notation.
  */
-/*
 void print_tree() {
 
-    page_t * p = (page_t *)malloc(sizeof(page_t));
+    page_t * c = (page_t *)malloc(sizeof(page_t));
     int i = 0;
     int rank = 0;
     int new_rank = 0;
@@ -998,81 +1066,99 @@ void print_tree() {
         printf("Empty tree.\n");
         return;
     }
+    leaf_page_t * c_leaf = NULL;
     int64_t queue[4000];
-    queue[0] = 0;
-    enqueue(header->root_start);
-    while( queue[0] != 0 ) {
-	    pagenum_t p_pagenum = dequeue();
-	    file_read_page(p_pagenum, p);
-	    internal_page_t * p_internal = (internal_page_t *)p;
-        if (p->parent != 0 && p == p->parent->pointers[0]) {
-            new_rank = path_to_root( root, p );
-            if (new_rank != rank) {
+    int head = 0;
+    int tail = 0;
+    queue[tail] = 0;
+    enqueue(header->root_start, queue, &head, &tail);
+    while( head != tail ) {
+	    /*
+	    for(int i = 0; i < 10; i++){
+		    printf("queue[%d]: %ld\n", i, queue[i]);
+	    }
+	    */
+	    pagenum_t c_pagenum = dequeue(queue, &head, &tail);
+	    file_read_page(c_pagenum, c);
+	    internal_page_t * c_internal = (internal_page_t *)c;
+        if (c_internal->parent_pagenum != 0) {
+            new_rank = path_to_root( header->root_start, c_pagenum );
+            if (rank != new_rank) {
                 rank = new_rank;
                 printf("\n");
             }
         }
-        for (i = 0; i < p->num_keys; i++) {
-            printf("%lu ", p->keys[i]);
+	if(c_internal->is_leaf == 0){
+        	for (i = 0; i < c_internal->num_keys; i++)
+			printf("%ld ", c_internal->key_pagenum[i].key);
         }
-        if (!p->is_leaf)
-            for (i = 0; i <= p->num_keys; i++)
-                enqueue(p->pointers[i]);
+	else{
+		c_leaf = (leaf_page_t *)c_internal;
+		for (i = 0; i < c_leaf->num_keys; i++)
+			printf("%ld ", c_leaf->key_value[i].key);
+	}
+        if (!c_internal->is_leaf){
+		if(c_internal->one_more_pagenum != 0)
+			enqueue(c_internal->one_more_pagenum, queue, &head, &tail);
+		for (i = 0; i < c_internal->num_keys; i++)
+			enqueue(c_internal->key_pagenum[i].pagenum, queue, &head, &tail);
+	}
         printf("| ");
     }
     printf("\n");
+    return;
 }
 
-*/
 
 /* Helper function for printing the
  * tree out.  See print_tree.
  */
-/*
-void enqueue(pagenum_t pagenum) {
-	int i = 0;
-	while(queue[i] != 0){
-		i++;
-		if(i == 4000){
-			printf("enque error\n");
-			break;
-		}
-
-	}
-	queue[i] = pagenum;
+void enqueue(pagenum_t pagenum, pagenum_t * queue, int * head, int * tail) {
+	queue[*tail] = pagenum;
+	(*tail)++;
+	if(*tail >= 4000)
+		*tail = 0;
+	if(*head == *tail)
+		printf("queue is fully occupied\n");
 }
 
-
-*/
 /* Helper function for printing the
  * tree out.  See print_tree.
  */
-/*
-int64_t dequeue() {
-	int64_t rtn = queue[0];
-	int i = 1;
-	while(queue[i] != 0){
-		queue[i - 1] = queue[i];
-		if(i == 4000)
-			break;
-	}
-
-    return ;
+pagenum_t dequeue(pagenum_t * queue, int * head, int * tail) {
+	pagenum_t rtn = queue[*head];
+	(*head)++;
+	if(*head >= 4000)
+		*head = 0;
+	return rtn;
 }
 
-*/
 
 /* Utility function to give the length in edges
  * of the path from any page_t to the root.
  */
-/*
-int path_to_root( page_t * root, page_t * child ) {
+int path_to_root( pagenum_t root_pagenum, pagenum_t child_pagenum ) {
     int length = 0;
-    page_t * c = child;
-    while (c != root) {
-        c = c->parent;
-        length++;
+    if(root_pagenum == child_pagenum){
+	    return length;
     }
+    page_t * internal_c = (page_t *)malloc(sizeof(page_t));
+    file_read_page(child_pagenum, internal_c);
+    internal_page_t * internal = (internal_page_t *)internal_c;
+
+    pagenum_t parent_pagenum = internal->parent_pagenum;
+    length++;
+    
+    while (parent_pagenum != root_pagenum) {
+	    page_t * p = (page_t *)malloc(sizeof(page_t));
+	    file_read_page(parent_pagenum, p);
+	    internal_page_t * parent = (internal_page_t *)p;
+            parent_pagenum = parent->parent_pagenum;
+            length++;
+
+	    free(p);
+    }
+    free(internal);
     return length;
 }
-*/
+

@@ -26,15 +26,14 @@ int file_open(char * pathname){
 	}
 
 	if((fd = open(pathname, O_EXCL|O_CREAT|O_RDWR|O_SYNC, S_IRWXU|S_IRWXG|S_IRWXO)) == -1){
-		fd = open(pathname, O_RDWR|O_SYNC, S_IRWXU|S_IRWXG|S_IRWXO);
+		if((fd = open(pathname, O_RDWR|O_SYNC, S_IRWXU|S_IRWXG|S_IRWXO)) == -1){
+			perror("open");
+			return -1;
+		}
 		unique_id[i] = fd;
 		unique_path[i] = (char *)malloc(sizeof(pathname));
 		unique_path[i] = pathname;
 		return fd;
-	}
-	if((fd = open(pathname, O_CREAT|O_RDWR|O_SYNC, S_IRWXU|S_IRWXG|S_IRWXO)) == -1){
-		perror("open");
-		return -1;
 	}
 	unique_id[i] = fd;
 	unique_path[i] = (char *)malloc(strlen(pathname));
@@ -76,6 +75,7 @@ pagenum_t file_alloc_page(){
 // Free an on-disk page to the free page list
 void file_free_page(pagenum_t pagenum){
 
+	printf("freeing page %ld\n", pagenum);
 	// set new free page number to end of the list
 	pagenum_t * cur_free_num = (pagenum_t *)malloc(sizeof(pagenum_t));
 	pagenum_t * next_free_num = (pagenum_t *)malloc(sizeof(pagenum_t));;

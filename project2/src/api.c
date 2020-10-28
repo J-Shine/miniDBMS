@@ -3,9 +3,17 @@
 #include "api.h"
 
 int open_table(char * pathname){
+
 	fd = file_open(pathname);
-	set_header();
-	set_free_pages();
+
+	page_t * header_c = (page_t *)malloc(sizeof(page_t));
+	file_read_page(0, header_c);
+	header_page_t * header = (header_page_t *)header_c;
+	if(header->free_start == 0){
+		set_header();
+		set_free_pages();
+	}
+	free(header_c);
 
 	return fd;
 }

@@ -5,8 +5,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include "file.h"
-#define LEAF_ORDER 32 
-#define INTERNAL_ORDER 249
+#define LEAF_ORDER 4 
+#define INTERNAL_ORDER 4
 
 struct key_value_t{
 	int64_t key; // 8byte
@@ -53,6 +53,11 @@ typedef struct leaf_page_t leaf_page_t;
 void set_header();
 void set_free_pages();
 
+// print tree
+void print_tree(); 
+void enqueue(pagenum_t pagenum, pagenum_t * queue, int * head, int * tail); 
+pagenum_t dequeue(pagenum_t * queue, int * head, int * tail); 
+int path_to_root( pagenum_t root_pagenum, pagenum_t child_pagenum ); 
 
 // Find.
 int find_leaf(int64_t key, leaf_page_t * leaf, pagenum_t * pagenum);
@@ -80,3 +85,4 @@ int remove_entry_from_leaf(pagenum_t leaf_pagenum, int64_t key);
 int adjust_root_leaf(pagenum_t root_pagenum); 
 int delete_entry_internal(pagenum_t this_pagenum, int64_t key);
 int remove_entry_from_internal(pagenum_t this_pagenum, int64_t key);
+int64_t find_parent_key(pagenum_t this_pagenum, int64_t key);

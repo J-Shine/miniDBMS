@@ -132,31 +132,9 @@ int main( int argc, char ** argv ) {
             	scanf("%ld", &key);
             	db_delete(key);
             	break;
-	/*
-        case 'i':
-            scanf("%ld", &key);
-            scanf("%s", value);
-            root = insert(root, key, value);
-            print_tree(root);
-            break;
-        case 'f':
-            scanf("%ld", &key);
-            find_and_print(root, key, instruction == 'p');
-            break;
-        case 'q':
-            while (getchar() != (int)'\n');
-            return EXIT_SUCCESS;
-            break;
         case 't':
-            print_tree(root);
-            break;
-        case 'v':
-            verbose_output = !verbose_output;
-            break;
-        default:
-            usage_2();
-            break;
-	*/
+                print_tree();
+                break;
         }
         while (getchar() != (int)'\n');
         printf("> ");
