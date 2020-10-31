@@ -5,21 +5,11 @@
 #include<unistd.h>
 #include<stdlib.h>
 
-typedef uint64_t pagenum_t;
-/*
+extern int unique_id[11];
+extern char * unique_path[21];
+extern int unique_id_cnt;
 
-struct page_t{
-	// in-memory page structure
-	struct page_t * free; // [0-7]
-	struct page_t * parent; // [0-7]
-	int is_leaf; // [8-11]
-	int num_keys; // [12-15]
-	void ** pointers;
-	uint64_t * keys; // [128-4095]
-	struct page_t * next; // [120-127] Used for queue.
-};
-typedef struct page_t page_t;
-*/
+typedef uint64_t pagenum_t;
 
 struct page_t{
 	pagenum_t buffer[512];

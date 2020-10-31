@@ -2,8 +2,9 @@
 #include <stdio.h>
 #include <string.h>
 
-int unique_id[100];
-char * unique_path[100];
+int unique_id[11];
+char * unique_path[21];
+int unique_id_cnt = 0;
 
 int fd;
 page_t free_pages;
@@ -15,30 +16,63 @@ void copy_page_t(page_t * des, page_t * src){
 }
 
 int file_open(char * pathname){
-
-	int i = 0;
-	while(unique_id[i] > 2){
-		if((strcmp(pathname, unique_path[i])) == 0){
-			printf("이미 열려있는 파일입니다.\n");
-			return -1;
+	int i = 1;
+	while(unique_id[i] != -1 && i <= 10){
+		// 이미 unique_id가 존재하는 파일인 경우 fd를 unique_id에 다시 할당해주고 unique_id를 리턴
+		if(strcmp(pathname, unique_path[i]) == 0){
+			if((fd = open(pathname, O_RDWR, S_IRWXU|S_IRWXG|S_IRWXO)) == -1){
+				/*
+				printf("pathname: %s\n", pathname);
+				printf("error1\n");
+				*/
+				perror("open");
+				return -1;
+			}
+			/*
+			printf("pathname: %s\n", pathname);
+			printf("unique_id[%d]: %d\n", i, unique_id[i]);
+			printf("unique_id_cnt: %d\n", unique_id_cnt);
+			*/
+			unique_id[i] = fd;
+			return i;
 		}
 		i++;
+		printf("i is %d\n", i);
 	}
-
-	if((fd = open(pathname, O_EXCL|O_CREAT|O_RDWR|O_SYNC, S_IRWXU|S_IRWXG|S_IRWXO)) == -1){
-		if((fd = open(pathname, O_RDWR|O_SYNC, S_IRWXU|S_IRWXG|S_IRWXO)) == -1){
+	if(unique_id_cnt >= 10){
+		printf("The unique table is full. No more new id is available.\n");
+		return -1;
+	}
+	if((fd = open(pathname, O_EXCL|O_CREAT|O_RDWR, S_IRWXU|S_IRWXG|S_IRWXO)) == -1){
+		if((fd = open(pathname, O_CREAT|O_RDWR, S_IRWXU|S_IRWXG|S_IRWXO)) == -1){
+			/*
+			printf("pathname: %s\n", pathname);
+			printf("error2\n");
+			*/
 			perror("open");
 			return -1;
 		}
 		unique_id[i] = fd;
-		unique_path[i] = (char *)malloc(sizeof(pathname));
-		unique_path[i] = pathname;
-		return fd;
+		unique_path[i] = (char *)malloc(sizeof(char) * 21);
+		unique_path[i] = strncpy(unique_path[i], pathname, sizeof(char) * 21);
+		unique_id_cnt++;
+		/*
+		printf("pathname: %s\n", pathname);
+		printf("unique_id[%d]: %d\n", i, unique_id[i]);
+		printf("unique_id_cnt: %d\n", unique_id_cnt);
+		*/
+		return i;
 	}
 	unique_id[i] = fd;
-	unique_path[i] = (char *)malloc(strlen(pathname));
-	unique_path[i] = pathname;
-	return fd;
+	unique_path[i] = (char *)malloc(sizeof(char) * 21);
+	unique_path[i] = strncpy(unique_path[i], pathname, sizeof(char) * 21);
+	unique_id_cnt++;
+	/*
+	printf("pathname: %s\n", pathname); 
+	printf("unique_id[%d]: %d\n", i, unique_id[i]); 
+	printf("unique_id_cnt: %d\n", unique_id_cnt);
+	*/
+	return i;
 }
 
 // Allocate an on-disk page from the free page list
