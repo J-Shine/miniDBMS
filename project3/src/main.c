@@ -19,6 +19,7 @@ int main( int argc, char ** argv ) {
     
     int num_buf = 0;
     int64_t cnt = 1;
+    int tid = 0;
     char ret_value[120];
     printf("> ");
     while (scanf("%c", &instruction) != EOF) {
@@ -33,22 +34,32 @@ int main( int argc, char ** argv ) {
 		free(path);
 		break;
 	case 'f':
+		scanf("%d", &tid);
 		scanf("%ld", &key);
-		if((db_find(key, ret_value)) < 0){
+		if((db_find(tid, key, ret_value)) < 0){
 			printf("key|value not found\n");
+			break;
 		}
 		printf("key|value found: %ld | %s\n", key, ret_value);
 		break;
+        case 'p':
+		scanf("%d", &tid);
+                print_buffer();
+		print_LRU_list();
+		print_tree(tid);
+                break;
 	case 'i':
 		//while(cnt < 33){
 		//	key = cnt; value[0] = 'a';
 		//	db_insert(key, value);
 		//	cnt++;
 		//}
+		scanf("%d", &tid);
 		scanf("%ld", &key);
 		scanf("%s", value);
-		db_insert(key, value);
+		db_insert(tid, key, value);
 		break;
+		/*
         case 'd':
             	scanf("%ld", &key);
             	db_delete(key);
@@ -56,6 +67,11 @@ int main( int argc, char ** argv ) {
         case 't':
                 print_tree();
                 break;
+		*/
+	case 'c':
+		scanf("%d", &tid);
+		close_table(tid);
+		break;
 	case 'b':
 		scanf("%d", &num_buf);
 		init_db(num_buf);

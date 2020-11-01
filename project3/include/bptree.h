@@ -49,38 +49,33 @@ struct leaf_page_t{
 };
 typedef struct leaf_page_t leaf_page_t;
 
-// set header
-void set_header();
-void set_free_pages();
 
-/*
 // print tree
-void print_tree(); 
+void print_tree(int table_id); 
 void enqueue(pagenum_t pagenum, pagenum_t * queue, int * head, int * tail); 
 pagenum_t dequeue(pagenum_t * queue, int * head, int * tail); 
-int path_to_root( pagenum_t root_pagenum, pagenum_t child_pagenum ); 
-*/
+int path_to_root(int table_id, pagenum_t root_pagenum, pagenum_t child_pagenum); 
 
 // Find.
-int find_leaf(int64_t key, leaf_page_t * leaf, pagenum_t * pagenum);
-int find(int64_t key, char * ret);
+int find_leaf(int table_id, int64_t key, leaf_page_t * leaf, pagenum_t * pagenum);
+int find(int table_id, int64_t key, char * ret);
 
+
+// Insertion.
+int insert(int table_id, int64_t key, char * value );
+int start_new_tree(int table_id, int64_t key, char * value);
+int insert_into_leaf(int table_id, leaf_page_t * leaf, int64_t key, char * value, pagenum_t * pagenum );
+int insert_into_leaf_after_splitting(int table_id, leaf_page_t * leaf, 
+	int64_t key, char * value, pagenum_t parent_pagenum, pagenum_t pagenum); 
+int make_leaf(int table_id, leaf_page_t * leaf, pagenum_t parent_pagenum, pagenum_t * new_pagenum); 
+int make_internal(int table_id, internal_page_t * internal, pagenum_t parent_pagenum, pagenum_t * new_pagenum);
+int cut( int length ); 
+int insert_into_parent(int table_id, page_t * left, int64_t key, page_t * right, pagenum_t parent_pagenum, pagenum_t left_pagenum, pagenum_t right_pagenum); 
+int insert_into_new_root(int table_id, page_t * left, int64_t key, page_t * right, pagenum_t left_pagenum, pagenum_t right_pagenum);
+int insert_into_internal(int table_id, internal_page_t * internal, int64_t key, pagenum_t pagenum, pagenum_t parent_pagenum);
+int insert_into_internal_after_splitting(int table_id, internal_page_t * internal, int64_t key, pagenum_t record_pagenum, pagenum_t parent_pagenum, pagenum_t this_pagenum); 
 
 /*
-// Insertion.
-int insert(int64_t key, char * value );
-int start_new_tree(int64_t key, char * value);
-int insert_into_leaf( leaf_page_t * leaf, int64_t key, char * value, pagenum_t * pagenum );
-int insert_into_leaf_after_splitting(leaf_page_t * leaf, 
-	int64_t key, char * value, pagenum_t parent_pagenum, pagenum_t pagenum); 
-int make_leaf(leaf_page_t * leaf, pagenum_t parent_pagenum, pagenum_t * new_pagenum); 
-int make_internal(internal_page_t * internal, pagenum_t parent_pagenum, pagenum_t * new_pagenum);
-int cut( int length ); 
-int insert_into_parent(page_t * left, int64_t key, page_t * right, pagenum_t parent_pagenum, pagenum_t left_pagenum, pagenum_t right_pagenum); 
-int insert_into_new_root(page_t * left, int64_t key, page_t * right, pagenum_t left_pagenum, pagenum_t right_pagenum);
-int insert_into_internal(internal_page_t * internal, int64_t key, pagenum_t pagenum, pagenum_t parent_pagenum);
-int insert_into_internal_after_splitting(internal_page_t * internal, int64_t key, pagenum_t record_pagenum, pagenum_t parent_pagenum, pagenum_t this_pagenum); 
-
 // Deletion.
 int delete(int64_t key); 
 int delete_entry_leaf(pagenum_t leaf_pagenum, int64_t key); 

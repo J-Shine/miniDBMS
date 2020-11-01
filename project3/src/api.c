@@ -2,8 +2,6 @@
 
 #include "api.h"
 
-buffer_t ** buffer_pool;
-int num_buffer;
 
 int init_db(int num_buf){
 
@@ -14,11 +12,14 @@ int init_db(int num_buf){
 	buffer_pool = (buffer_t **)malloc(sizeof(buffer_t) * num_buf);
 	for(int i = 0; i < num_buf; i++){
 		buffer_pool[i] = (buffer_t *)malloc(sizeof(buffer_t));
+		printf("sizeof(buffer_t) is %ld\n", sizeof(buffer_t));
 		buffer_pool[i]->table_id = -1;
 		buffer_pool[i]->page_num = -1;
 		buffer_pool[i]->is_dirty = -1;
 		buffer_pool[i]->is_pinned = -1;
-		buffer_pool[i]->LRU_next = NULL;
+		buffer_pool[i]->LRU_prev = (buffer_t *)malloc(sizeof(buffer_t));
+		buffer_pool[i]->LRU_next = (buffer_t *)malloc(sizeof(buffer_t));
+
 	}
 
 	// table 배열을 초기화
@@ -26,8 +27,20 @@ int init_db(int num_buf){
 		unique_id[i] = -1;
 	}
 
-	return 0;
+	// LRU head와 tail 동적할당
+	LRU_head = NULL;
+	/*
+	LRU_head = (buffer_t *)malloc(sizeof(buffer_t));
+	LRU_head->LRU_prev = (buffer_t *)malloc(sizeof(buffer_t));
+	LRU_head->LRU_next = (buffer_t *)malloc(sizeof(buffer_t));
+	*/
+	LRU_tail = (buffer_t *)malloc(sizeof(buffer_t));
+	/*
+	LRU_tail->LRU_prev = (buffer_t *)malloc(sizeof(buffer_t));
+	LRU_tail->LRU_next = (buffer_t *)malloc(sizeof(buffer_t));
+	*/
 
+	return 0;
 }
 
 
@@ -35,52 +48,34 @@ int open_table(char * pathname){
 
 	int unique_idx = file_open(pathname);
 
-	// read header
-	page_t * header_c = (page_t *)malloc(sizeof(page_t));
-	file_read_page(0, header_c);
-	header_page_t * header = (header_page_t *)header_c;
-
-	// set header and free pages
-	if(header->free_start == 0){
-		set_header();
-		set_free_pages();
-	}
-	free(header_c);
-
 	return unique_id[unique_idx];
 }
 
 int db_insert(int table_id, int64_t key, char * value){
-	if(fd <= 2){
+	if(unique_id[table_id] <= 2){
 		printf("파일이 열려있지 않습니다.\n");
 		return -1;
 	}
-	// find header
-	page_t * c = (page_t *)malloc(sizeof(page_t));
-	file_read_page(0, c);
-	header_page_t * header = (header_page_t *)c;
-	if(header->num_pages == 0)
-		set_header();
 
 	// call insert
-	if((insert(key, value)) < 0)
-		free(header);
+	if((insert(table_id, key, value)) < 0)
 		return -1;
-	free(header);
 	return 0;
 
 }
+
 
 int db_find(int table_id, int64_t key, char * ret_val){
 	if(unique_id[table_id] <= 2){
 		printf("파일이 열려있지 않습니다.\n");
 		return -1;
 	}
-	if((find(unique_id[table_id], key, ret_val)) < 0){
+	if((find(table_id, key, ret_val)) < 0){
 		return -1;
 	}
 	return 0;
 }
+/*
 
 int db_delete(int table_id, int64_t key){
 	if(fd <= 2){
@@ -91,9 +86,15 @@ int db_delete(int table_id, int64_t key){
 	rtn = delete(key);
 	return rtn;
 }
+*/
 
 int close_table(int table_id){
-
+	for(int i = 0; i < num_buffer; i++){
+		if(buffer_pool[i]->table_id == table_id){
+			printf("x\n");
+			buffer_write_disk(i);
+		}
+	}
 }
 
 int shutdown_db(void){
