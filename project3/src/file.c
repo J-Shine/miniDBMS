@@ -74,7 +74,7 @@ int file_open(char * pathname){
 			return i;
 		}
 		i++;
-		printf("i is %d\n", i);
+		//printf("i is %d\n", i);
 	}
 	if(unique_id_cnt >= 10){
 		printf("The unique table is full. No more new id is available.\n");
@@ -96,8 +96,8 @@ int file_open(char * pathname){
 	file_read_page(fd, 0, header_c);
 
 	// set header and free pages
-	printf("fd: %d\n", fd);
-	printf("header_c->buffer[0]: %ld\n", header_c->buffer[0]);
+	//printf("fd: %d\n", fd);
+	//printf("header_c->buffer[0]: %ld\n", header_c->buffer[0]);
 	set_header(fd);
 	set_free_pages(fd);
 	free(header_c);
@@ -134,7 +134,7 @@ pagenum_t file_alloc_page(int file_descriptor){
 // Free an on-disk page to the free page list
 void file_free_page(int file_descriptor, pagenum_t pagenum){
 
-	printf("freeing page %ld\n", pagenum);
+	//printf("freeing page %ld\n", pagenum);
 	// set new free page number to end of the list
 	page_t * cur_free_num_page = (page_t *)malloc(sizeof(page_t));
 	page_t * next_free_num_page = (page_t *)malloc(sizeof(page_t));
@@ -147,8 +147,8 @@ void file_free_page(int file_descriptor, pagenum_t pagenum){
 	//printf("next_free_num1 %ld\n", next_free_num_page->buffer[0]);
 	next_free_num_page->buffer[0] = pagenum;
 	//printf("cur_free_num %ld\n", cur_free_num_page->buffer[0]);
-	printf("file_descriptor: %d\n", file_descriptor);
-	printf("cur_free_num: %ld\n", cur_free_num_page->buffer[0]);
+	//printf("file_descriptor: %d\n", file_descriptor);
+	//printf("cur_free_num: %ld\n", cur_free_num_page->buffer[0]);
 	pwrite(file_descriptor, next_free_num_page, 8, (cur_free_num_page->buffer[0]) * 4096); 
 
 	// make page clean

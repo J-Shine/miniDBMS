@@ -12,7 +12,7 @@ int init_db(int num_buf){
 	buffer_pool = (buffer_t **)malloc(sizeof(buffer_t) * num_buf);
 	for(int i = 0; i < num_buf; i++){
 		buffer_pool[i] = (buffer_t *)malloc(sizeof(buffer_t));
-		printf("sizeof(buffer_t) is %ld\n", sizeof(buffer_t));
+		//printf("sizeof(buffer_t) is %ld\n", sizeof(buffer_t));
 		buffer_pool[i]->table_id = -1;
 		buffer_pool[i]->page_num = -1;
 		buffer_pool[i]->is_dirty = -1;

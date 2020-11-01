@@ -5,7 +5,7 @@
  * a key refers.
  */
 int find(int table_id, int64_t key, char * ret) {
-	printf("table_id: %d, key: %ld\n", table_id, key);
+	//printf("table_id: %d, key: %ld\n", table_id, key);
     int i = 0;
     pagenum_t * pagenum = (pagenum_t *)malloc(sizeof(pagenum_t));
     leaf_page_t * leaf = (leaf_page_t *)malloc(sizeof(leaf_page_t));
@@ -13,7 +13,7 @@ int find(int table_id, int64_t key, char * ret) {
     if (c == -1) {
 	    /////////////////////////
     	    unpin(table_id, *pagenum);
-	    printf("u1\n");
+	    //printf("u1\n");
 	    free(pagenum);
 	    free(leaf);
 	    return -1;
@@ -23,7 +23,7 @@ int find(int table_id, int64_t key, char * ret) {
     if (i == leaf->num_keys) {
 	    /////////////////////////
     	    unpin(table_id, *pagenum);
-	    printf("u2\n");
+	    //printf("u2\n");
 	    free(pagenum);
 	    free(leaf);
             return -1;
@@ -33,14 +33,14 @@ int find(int table_id, int64_t key, char * ret) {
 	strncpy(ret, leaf->key_value[i].value, sizeof(leaf->key_value[i].value));
 	//////////////////////////
     	unpin(table_id, *pagenum);
-	printf("u3\n");
+	//printf("u3\n");
 	free(pagenum);
 	free(leaf);
         return 0;
     }
     /////////////////////////// unpin leaf from find_leaf
     unpin(table_id, *pagenum);
-    printf("u4\n");
+    //printf("u4\n");
     free(pagenum);
     free(leaf);
     return 0;
@@ -62,9 +62,11 @@ int find_leaf(int table_id, int64_t key, leaf_page_t * leaf_page, pagenum_t * pa
     */
 
     if (header_page->root_start == 0){
+	    /*
 	    printf("header_page->root_start %ld\n", header_page->root_start);
 	    printf("header_page->root_start %ld\n", header_page->free_start);
 	    printf("header_page->root_start %ld\n", header_page->num_pages);
+	    */
         return -1; 
     }
     *pagenum = header_page->root_start;
@@ -74,7 +76,7 @@ int find_leaf(int table_id, int64_t key, leaf_page_t * leaf_page, pagenum_t * pa
     internal_page_t * internal_page = (internal_page_t *)internal_c;
     ///////////////////
     unpin(table_id, 0);
-    printf("u5\n");
+    //printf("u5\n");
 
     while(!internal_page->is_leaf){
 	    
@@ -95,13 +97,13 @@ int find_leaf(int table_id, int64_t key, leaf_page_t * leaf_page, pagenum_t * pa
 	    if(i == 0){
 		    /////////////////////////
 		    unpin(table_id, *pagenum);
-    		    printf("u6\n");
+    		    //printf("u6\n");
 		    *pagenum = internal_page->one_more_pagenum;
 	    }
 	    else{
 		    /////////////////////////
 		    unpin(table_id, *pagenum);
-    		    printf("u7\n");
+    		    //printf("u7\n");
 		    *pagenum = internal_page->key_pagenum[i - 1].pagenum;
 	    }
 	    
@@ -148,7 +150,7 @@ void print_tree(int table_id) {
     pagenum_t root_start = header->root_start;
     ////////////////////////////////////////
     unpin(table_id, 0);
-    printf("u8\n");
+    //printf("u8\n");
 
     if (header->root_start == 0) {
         printf("Empty tree.\n");
@@ -247,7 +249,7 @@ int path_to_root(int table_id, pagenum_t root_pagenum, pagenum_t child_pagenum) 
 	    internal_page_t * parent = (internal_page_t *)p;
 	    //////////////////////////////////////////////
 	    unpin(table_id, parent_pagenum);
-    	    printf("u11\n");
+    	    //printf("u11\n");
             parent_pagenum = parent->parent_pagenum;
             length++;
 	    
@@ -268,7 +270,7 @@ int insert(int table_id, int64_t key, char * value) {
 	pagenum_t root_start = head->root_start;
 	///////////////////
 	unpin(table_id, 0);
-    	    printf("u12\n");
+    	    //printf("u12\n");
 
     /* The current implementation ignores
      * duplicates.
@@ -278,13 +280,13 @@ int insert(int table_id, int64_t key, char * value) {
 	    free(c1);
 	    return -1;
     }
-    printf("finish find() in the insert()\n");
+    //printf("finish find() in the insert()\n");
 
     /* Case: the tree does not exist yet.
      * Start a new tree.
      */
 
-    printf("root_start %ld\n", root_start);
+    //printf("root_start %ld\n", root_start);
     if (root_start == 0){ 
 
         if((start_new_tree(table_id, key, value)) < 0){
@@ -295,7 +297,7 @@ int insert(int table_id, int64_t key, char * value) {
 	for(int j = 0; j < num_buffer; j++){
 		if(buffer_pool[j]->table_id != -1){
 			for(int i = 0; i < 10; i++){
-				printf("after start_new_tree buffer_pool1[%d] %ld\n", j, buffer_pool[j]->page.buffer[i]);
+				//printf("after start_new_tree buffer_pool1[%d] %ld\n", j, buffer_pool[j]->page.buffer[i]);
 			}
 		}
 	}
@@ -342,7 +344,7 @@ int insert(int table_id, int64_t key, char * value) {
     //printf("head->free_start before the insert_into_leaf_after_splittign: %ld\n", head->free_start);
     ////////////////////////// unpin leaf from find_leaf
     unpin(table_id, *pagenum);
-    	    printf("u14\n");
+    	    //printf("u14\n");
     insert_into_leaf_after_splitting(table_id, leaf, key, value, leaf->parent_pagenum, *pagenum);
     //printf("after the insert_into_leaf_after_splitting\n");
     free(leaf);
@@ -371,7 +373,7 @@ int start_new_tree(int table_id, int64_t key, char * value) {
     ///////////////////////////////////////////////read root
     buffer_read_buffer(table_id, header->root_start, c_leaf);
     for(int i = 0; i < 10; i++){
-	    printf("c_leafs2 %ld\n",c_leaf->buffer[i]);
+	    //printf("c_leafs2 %ld\n",c_leaf->buffer[i]);
     }
     leaf_page_t * leaf_page = (leaf_page_t *)malloc(sizeof(page_t));
     leaf_page = (leaf_page_t *)c_leaf;
@@ -379,13 +381,13 @@ int start_new_tree(int table_id, int64_t key, char * value) {
 	for(int j = 0; j < num_buffer; j++){
 		if(buffer_pool[j]->table_id != -1){
 			for(int i = 0; i < 10; i++){
-				printf("after start_new_tree buffer_pool2[%d] %ld\n", j, buffer_pool[j]->page.buffer[i]);
+	//			printf("after start_new_tree buffer_pool2[%d] %ld\n", j, buffer_pool[j]->page.buffer[i]);
 			}
 		}
 	}
 
     for(int i = 0; i < 10; i++){
-	    printf("c_leafs2.4 %ld\n",c_leaf->buffer[i]);
+	    //printf("c_leafs2.4 %ld\n",c_leaf->buffer[i]);
     }
     // set leaf_page
     leaf_page->parent_pagenum = 0;
@@ -393,7 +395,7 @@ int start_new_tree(int table_id, int64_t key, char * value) {
     leaf_page->num_keys = 1;
     leaf_page->right_sib_pagenum = 0;
     for(int i = 0; i < 10; i++){
-	    printf("c_leafs2.5 %ld\n",c_leaf->buffer[i]);
+	    //printf("c_leafs2.5 %ld\n",c_leaf->buffer[i]);
     }
     
     // save record to leaf
@@ -404,16 +406,16 @@ int start_new_tree(int table_id, int64_t key, char * value) {
     c_leaf = (page_t *)leaf_page;
     ///////////////////////////////////////////////write root
     for(int i = 0; i < 10; i++){
-	    printf("c_leafs3 %ld\n",c_leaf->buffer[i]);
+	    //printf("c_leafs3 %ld\n",c_leaf->buffer[i]);
     }
     buffer_write_buffer(table_id, header->root_start, c_leaf);
     ///////////////////////////////////////////////unpin root
     unpin(table_id, header->root_start);
-    printf("u15\n");
+    //printf("u15\n");
 	for(int j = 0; j < num_buffer; j++){
 		if(buffer_pool[j]->table_id != -1){
 			for(int i = 0; i < 10; i++){
-				printf("after start_new_tree buffer_pool3[%d] %ld\n", j, buffer_pool[j]->page.buffer[i]);
+				//printf("after start_new_tree buffer_pool3[%d] %ld\n", j, buffer_pool[j]->page.buffer[i]);
 			}
 		}
 	}
@@ -424,7 +426,7 @@ int start_new_tree(int table_id, int64_t key, char * value) {
     buffer_write_buffer(table_id, 0, c_header);
     ///////////////////////////////////////////////unpin header
     unpin(table_id, 0);
-    printf("u16\n");
+    //printf("u16\n");
 
     free(leaf_page);
 
@@ -461,7 +463,7 @@ int insert_into_leaf(int table_id, leaf_page_t * leaf, int64_t key, char * value
     buffer_write_buffer(table_id, *pagenum, c);
     //////////////////////// unpin leaf
     unpin(table_id, *pagenum);
-    printf("u17\n");
+    //printf("u17\n");
 
     return 0;
 }
@@ -558,9 +560,9 @@ int insert_into_leaf_after_splitting(int table_id, leaf_page_t * leaf, int64_t k
 
     //////////////////////// unpin pagenum, *new_pagenum 
     unpin(table_id, pagenum);
-    printf("u18\n");
+    //printf("u18\n");
     unpin(table_id, *new_pagenum);
-    printf("u19\n");
+    //printf("u19\n");
 
     insert_into_parent(table_id, leaf_c, new_key, new_leaf_c, parent_pagenum, pagenum, *new_pagenum);
 
@@ -730,7 +732,7 @@ int make_internal(int table_id, internal_page_t * internal, pagenum_t parent_pag
 	// write leaf to the buffer 
 	page_t * internal_c = (page_t *)internal;
 	buffer_write_buffer(table_id, *new_pagenum, internal_c);
-	printf("inside make_internal\n");
+	//printf("inside make_internal\n");
 
 	return 0;
 }
@@ -864,12 +866,12 @@ int insert_into_internal_after_splitting(int table_id, internal_page_t * interna
     new_internal->right_sib_pagenum = 0; 
 
     // write internal
-    printf("internal_splitting: this_pagenum %ld\n", this_pagenum); 
+    //printf("internal_splitting: this_pagenum %ld\n", this_pagenum); 
     page_t * internal_c = (page_t *)internal;
     buffer_write_buffer(table_id, this_pagenum, internal_c);
 
     // write new_internal
-    printf("internal_splitting: *new_pagenum %ld\n", *new_pagenum); 
+    //printf("internal_splitting: *new_pagenum %ld\n", *new_pagenum); 
     page_t * new_internal_c = (page_t *)new_internal;
     buffer_write_buffer(table_id, *new_pagenum, new_internal_c);
 

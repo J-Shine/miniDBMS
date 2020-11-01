@@ -46,7 +46,7 @@ int buffer_read_buffer(int table_id, pagenum_t pagenum, page_t * dest){
 	if(check == -1)
 		return 0;
 	if(check > -1){
-		printf("start buffer_read_disK()\n");
+		//printf("start buffer_read_disK()\n");
 		buffer_read_disk(table_id, pagenum, dest, check);
 		return 0;
 	}
@@ -54,9 +54,11 @@ int buffer_read_buffer(int table_id, pagenum_t pagenum, page_t * dest){
 
 int buffer_check_buffer(int table_id, pagenum_t pagenum, page_t * dest){
 	int i = 0;
+	/*
 	printf("i %d\n", i);
 	printf("num_buffer %d\n", num_buffer);
 	printf("buffer_pool[i]->table_id %d\n", buffer_pool[i]->table_id);
+	*/
 	while(i < num_buffer && buffer_pool[i]->table_id != -1){
 		// buffer_pool에 page가 존재하는 경우 dest에 넣어서 돌려주고 LRU list에 추가
 		if(buffer_pool[i]->table_id == table_id && buffer_pool[i]->page_num == pagenum){
@@ -69,7 +71,7 @@ int buffer_check_buffer(int table_id, pagenum_t pagenum, page_t * dest){
 		}
 		i++;
 	}
-	printf("qq\n");
+	//printf("qq\n");
 	return i;
 }
 
@@ -227,7 +229,7 @@ int buffer_read_disk(int table_id, pagenum_t pagenum, page_t * dest, int idx){
 			return 0;
 		}
 		else if(is_dirty == 1){
-			file_write_page(unique_id[w_table_id], w_pagenum, &(buffer_pool[w_idx]->page));
+			buffer_write_disk(w_idx);
 
 			// read new page to buffer
 			file_read_page(unique_id[table_id], pagenum, &(buffer_pool[w_idx]->page));
