@@ -5,8 +5,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include "buffer.h"
-#define LEAF_ORDER 4 
-#define INTERNAL_ORDER 4
+#define LEAF_ORDER 32 
+#define INTERNAL_ORDER 249 
 
 struct key_value_t{
 	int64_t key; // 8byte

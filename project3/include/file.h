@@ -8,6 +8,7 @@
 extern int unique_id[11];
 extern char * unique_path[21];
 extern int unique_id_cnt;
+extern int total_pagenum;
 
 typedef uint64_t pagenum_t;
 

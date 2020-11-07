@@ -124,7 +124,15 @@ int LRU_pop_head(int * rtn_table_id, int * rtn_pagenum, int * rtn_idx){
 	//printf("inside pop head\n");
 
 	int is_dirty = -1;
+	printf("LRU_head->table_id %d\n", LRU_head->table_id);
+	printf("LRU_head->page_num%ld\n", LRU_head->page_num);
+	printf("LRU_head->is_dirty%d\n", LRU_head->is_dirty);
+	printf("LRU_head->is_pinned%d\n", LRU_head->is_pinned);
 	is_dirty = LRU_head->is_dirty;
+	printf("LRU_head pagenum %ld\n", LRU_head->page_num);
+			for(int i = 0; i < 10; i++){
+				printf("before kicked to disk buffer_pool[%d]->page2 %ld\n", i, LRU_head->page.buffer[i]);
+			}
 	*rtn_table_id = LRU_head->table_id;
 	*rtn_pagenum = LRU_head->page_num;
 
@@ -147,6 +155,7 @@ int pin(int table_id, pagenum_t pagenum){
 		if(buffer_pool[idx]->table_id == table_id && buffer_pool[idx]->page_num == pagenum){
 			if(buffer_pool[idx]->is_pinned > 0){
 				printf("This page is pinned. Can't read this page.\n");
+				printf("buffer_pool[%d]->is_pinned %d \n", idx, buffer_pool[idx]->is_pinned);
 				return -1;
 			}
 			else if(buffer_pool[idx]->is_pinned == 0 || buffer_pool[idx]->is_pinned == -1){
@@ -173,7 +182,7 @@ int unpin(int table_id, pagenum_t pagenum){
 			}
 			else{
 				printf("unpin error\n");
-				printf("is_pinned value is : %d\n", buffer_pool[i]->is_pinned);
+				printf("buffer_pool[%d]->is_pinned %d\n", i, buffer_pool[i]->is_pinned);
 				return -1;
 			}
 		}
@@ -215,6 +224,7 @@ int buffer_read_disk(int table_id, pagenum_t pagenum, page_t * dest, int idx){
 		int w_idx = 0;
 		int is_dirty = LRU_pop_head(&w_table_id, &w_pagenum, &w_idx);
 		if(is_dirty == 0){
+			printf("inside is_dirty == 0\n");
 			file_read_page(unique_id[table_id], pagenum, &(buffer_pool[w_idx]->page));
 			buffer_pool[w_idx]->table_id = table_id;
 			buffer_pool[w_idx]->page_num = pagenum;
@@ -229,6 +239,9 @@ int buffer_read_disk(int table_id, pagenum_t pagenum, page_t * dest, int idx){
 			return 0;
 		}
 		else if(is_dirty == 1){
+			for(int i = 0; i < 10; i++){
+				printf("before kicked to disk buffer_pool[%d]->page1 %ld\n", w_idx, buffer_pool[w_idx]->page.buffer[i]);
+			}
 			buffer_write_disk(w_idx);
 
 			// read new page to buffer
@@ -256,8 +269,11 @@ int buffer_write_buffer(int table_id, pagenum_t pagenum, page_t * src){
 	printf("buffer_write_buffer pagenum %ld\n", pagenum);
 	*/
 	int i = 0;
-	while(buffer_pool[i]->table_id != -1 && i < num_buffer){
+	while(i < num_buffer && buffer_pool[i]->table_id != -1){
 		if(buffer_pool[i]->table_id == table_id && buffer_pool[i]->page_num == pagenum){
+			printf("buffer_pool[i]->table_id %d \n", buffer_pool[i]->table_id);
+			printf("buffer_pool[i]->page_num %ld \n", buffer_pool[i]->page_num);
+			buffer_pool[i]->is_dirty = 1;
 			for(int j = 0; j < 512; j++){
 				buffer_pool[i]->page.buffer[j] = src->buffer[j];
 			}
@@ -284,12 +300,39 @@ pagenum_t file_alloc_page_buffer(int table_id){
 	pagenum_t new_pagenum;
 	new_pagenum = file_alloc_page(unique_id[table_id]);
 
+	// 새로 받은 page를 buffer에 올려
 	page_t * c = (page_t *)malloc(sizeof(page_t));
 	buffer_read_buffer(table_id, new_pagenum, c);
+
+	// buffer의 header에 있는 free_start를 업데이트
+	page_t * header_c = (page_t *)malloc(sizeof(page_t));
+	buffer_read_buffer(table_id, 0, header_c);
+	header_c->buffer[0] = c->buffer[0];
+	buffer_write_buffer(table_id, 0, header_c);
+
 	unpin(table_id, new_pagenum);
+	unpin(table_id, 0);
+
+	free(c);
+	free(header_c);
 	return new_pagenum;
 }
 void set_free_pages_buffer(int table_id){
-	return set_free_pages(unique_id[table_id]);
+
+	set_free_pages(unique_id[table_id]);
+
+	// buffer의 header에 있는 free_start를 업데이트
+	page_t * header_disk_c = (page_t *)malloc(sizeof(page_t));
+	page_t * header_buffer_c = (page_t *)malloc(sizeof(page_t));
+	buffer_read_buffer(table_id, 0, header_buffer_c);
+	file_read_page(unique_id[table_id], 0, header_disk_c);
+	printf("header_disk_c->buffer[2] %ld\n", header_disk_c->buffer[2]);
+	header_buffer_c->buffer[2] = header_disk_c->buffer[2];
+	buffer_write_buffer(table_id, 0, header_buffer_c);
+
+	unpin(table_id, 0);
+
+	free(header_disk_c);
+	free(header_buffer_c);
 }
 
