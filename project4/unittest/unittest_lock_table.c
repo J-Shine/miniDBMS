@@ -61,8 +61,7 @@ transfer_thread_func(void* arg)
 		accounts[source_table_id][source_record_id] -= money_transferred;
 
 		/* Acquire lock!! */
-		destination_lock =
-			lock_acquire(destination_table_id, destination_record_id);
+		destination_lock = lock_acquire(destination_table_id, destination_record_id);
 
 		/* deposit */
 		accounts[destination_table_id][destination_record_id]
@@ -138,6 +137,7 @@ int main()
 			accounts[table_id][record_id] = INITIAL_MONEY;
 		}
 	}
+
 
 	/* Initialize your lock table. */
 	init_lock_table();

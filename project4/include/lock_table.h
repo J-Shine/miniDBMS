@@ -4,6 +4,10 @@
 #include <stdint.h>
 
 typedef struct lock_t lock_t;
+typedef struct hash_t hash_t;
+
+/* hash function */
+int hash(int table_id, int64_t key);
 
 /* APIs for lock table */
 int init_lock_table();
