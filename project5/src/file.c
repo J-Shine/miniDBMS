@@ -37,7 +37,7 @@ void set_header(int file_descriptor){
 void set_free_pages(int file_descriptor){
 	page_t * header = (page_t *)malloc(sizeof(page_t));
 	page_t * free_page1 = (page_t *)malloc(sizeof(page_t));
-	printf("inside set_free_pagess\n");
+	//printf("inside set_free_pagess\n");
 	
 	// get current free number
 	file_read_page(file_descriptor, 0, header);
@@ -49,7 +49,7 @@ void set_free_pages(int file_descriptor){
 	while(cnt < 5 && next_free_num != 0){
 		file_read_page(file_descriptor, next_free_num, free_page1);
 		next_free_num = free_page1->buffer[0];
-		printf("next_free_numm %ld \n", next_free_num);
+		//printf("next_free_numm %ld \n", next_free_num);
 		cnt++;
 	}
 	while(cnt < 5){
@@ -131,7 +131,7 @@ pagenum_t file_alloc_page(int file_descriptor){
 	file_write_page(file_descriptor, 0, header); 
 
 	free(header);
-	printf("allocating pagenum %ld \n", cur_free_num);
+	//printf("allocating pagenum %ld \n", cur_free_num);
 	
 	return cur_free_num;	
 }
@@ -139,7 +139,7 @@ pagenum_t file_alloc_page(int file_descriptor){
 // Free an on-disk page to the free page list
 void file_free_page(int file_descriptor, pagenum_t pagenum){
 
-	printf("freeing page %ld\n", pagenum);
+	//printf("freeing page %ld\n", pagenum);
 	// set new free page number to end of the list
 	page_t * cur_free_num_page = (page_t *)malloc(sizeof(page_t));
 	pagenum_t next_free_pagenum = -1;
@@ -158,7 +158,7 @@ void file_free_page(int file_descriptor, pagenum_t pagenum){
 	// make page clean
 	page_t * empty_page = (page_t *)malloc(sizeof(page_t));
 	pread(file_descriptor, empty_page, 4096, pagenum * 4096);
-	printf("cleaning page %ld\n", pagenum);
+	//printf("cleaning page %ld\n", pagenum);
 	for(int i = 1; i < 512; i++){
 		empty_page->buffer[i] = 0;
 	}

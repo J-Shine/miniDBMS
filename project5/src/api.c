@@ -2,7 +2,8 @@
 #include "api.h"
 #include <trx.h>
 
-int init_db(int num_buf){
+extern int init_db(int num_buf){
+    //printf("started init_db()\n");
 
 	// 전역변수인 num_buffer에 입력받은 num_buf를 저장
 	num_buffer = num_buf;
@@ -38,19 +39,29 @@ int init_db(int num_buf){
 
     /* initialize lock table */
     init_lock_table();
+    //printf("init_db() success\n");
 
 	return 0;
 }
 
 
-int open_table(char * pathname){
+extern int open_table(char * pathname){
+    //printf("started open_table()\n");
+
 
 	int unique_idx = file_open(pathname);
 
-	return unique_id[unique_idx];
+    //int id = unique_id[unique_idx];
+    int id = unique_idx;
+    //printf("returning id %d from open_table()\n", id);
+	return id;
 }
 
 int db_insert(int table_id, int64_t key, char * value, int trx_id){
+    /*
+    printf("started db_insert() with table_id: %d, unique_id[table_id]: %d\n",
+            table_id, unique_id[table_id]);
+            */
 	if(unique_id[table_id] <= 2){
 		printf("파일이 열려있지 않습니다.\n");
 		return -1;
@@ -118,13 +129,12 @@ int db_delete(int table_id, int64_t key){
 int close_table(int table_id){
 	for(int i = 0; i < num_buffer; i++){
 		if(buffer_pool[i]->table_id == table_id){
-			printf("x\n");
 			buffer_write_disk(i);
 		}
 	}
 }
 
-int shutdown_db(void){
+extern int shutdown_db(void){
 	for(int i = 0; i < num_buffer; i++){
 		free(buffer_pool[i]);
 	}

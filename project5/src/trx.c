@@ -13,7 +13,7 @@ void* start_pthread(){
 int trx_make_id(){
 
     pthread_t new_id = g_trx_id++;
-    pthread_create(&new_id, 0, start_pthread, NULL);
+    //pthread_create(&new_id, 0, start_pthread, NULL);
 
     /* case: none of trx exists in trx_list */
     if(trx_head == NULL && trx_tail == NULL){

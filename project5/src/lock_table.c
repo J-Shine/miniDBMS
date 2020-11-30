@@ -40,7 +40,7 @@ int init_lock_table()
 
 lock_t* lock_acquire(int table_id, int64_t key, int trx_id, int lock_mode)
 {
-    printf("start lock_acquire()\n");
+    //printf("start lock_acquire()\n");
 	/* get hashed key */
 	int hashed_key = hash(table_id, key);
 
@@ -68,11 +68,11 @@ lock_t* lock_acquire(int table_id, int64_t key, int trx_id, int lock_mode)
     bool lock_need_wait = false;
     while(trx_iter_self != NULL && trx_found_self == false){
         if(trx_iter_self->trx_id == trx_id){
-            printf("q\n");
+            //printf("q\n");
             trx_found_self = true;
         }
         else{
-            printf("p\n");
+            //printf("p\n");
             trx_iter_self = trx_iter_self->trx_next;
         }
     }
@@ -93,6 +93,7 @@ lock_t* lock_acquire(int table_id, int64_t key, int trx_id, int lock_mode)
         else
             lock_iter_self = lock_iter_self->trx_next_lock;
     }
+    //printf("deadlock detect start\n");
 
     /* check deadlock */
     if(hash_array[hashed_key]->tail != NULL){
@@ -131,15 +132,20 @@ lock_t* lock_acquire(int table_id, int64_t key, int trx_id, int lock_mode)
             }
             prev_lock_object = prev_lock_object->prev;
         }
-        if(prev_lock_acquired_cnt > 0 && lock_mode == 1)
+
+        if(prev_lock_acquired_cnt > 0 && lock_mode == 1){
             lock_need_wait = true;
+        }
 
         /* abort */
-        if(deadlock_found == true)
+        if(deadlock_found == true){
+            //printf("mutex unlock lock_acquire\n");
 	        pthread_mutex_unlock(&lock_table_latch); // start critical section
-            printf("end lock_acquire()1\n");
+            //printf("end lock_acquire()1\n");
             return NULL;
+        }
     }
+    //printf("deadlock detect done\n");
 
 	/* case that no one acquired lock */
 	if(hash_array[hashed_key]->head == NULL && lock_need_wait == false){
@@ -177,7 +183,6 @@ lock_t* lock_acquire(int table_id, int64_t key, int trx_id, int lock_mode)
     lock_object->lock_acquired = true;
 
 	pthread_mutex_unlock(&lock_table_latch); // end critical section
-    printf("end lock_acquire()1\n");
 	return lock_object;
 }
 
