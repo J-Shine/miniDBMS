@@ -1,5 +1,6 @@
 # miniDBMS
 
+![레이어드아키텍처](https://user-images.githubusercontent.com/61873510/127859797-80d580ee-089e-45ca-ac46-6da16221a4b9.png)
 
 
 This is the mini DataBase Management System consists of file manager layer, buffer manager layer, B+ Tree layer, api layer and lock table layer.<br>
