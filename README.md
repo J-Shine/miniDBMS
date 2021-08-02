@@ -4,4 +4,4 @@
 
 This only aims for learning and understanding how Database Management Sysetem works.
 
-See the project report at the ```final_report``` folder.
+See the project report(Korean) at the ```final_report``` folder.
