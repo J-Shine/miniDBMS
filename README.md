@@ -4,6 +4,6 @@ This is the mini DataBase Management System consists of file manager layer, buff
 **Api lists** : ```init_db()```, ```open_table()```, ```db_insert()```, ```trx_begin()```, ```trx_commit()```, ```db_find()```, ```db_update```,  ```close_table()```, ```shutdown_db()``` <br>
 It can store 128byte sized key-value strings<br> 
 It can store 128byte sized key-value strings to the disk using B+ Tree algorithm.<br> 
-db_delete() operation is not available.<br>
+```db_delete()``` operation is not available.<br>
 
 See the project report(Korean) at the ```final_report``` folder.
