@@ -3,7 +3,7 @@
 ![레이어드아키텍처](https://user-images.githubusercontent.com/61873510/127855543-0b762ac0-fb4b-4571-a6fe-9ca4b2748216.png)
 
 This is the mini DataBase Management System consists of file manager layer, buffer manager layer, B+ Tree layer, api layer and lock table layer.<br>
-Available Api lists : ```init_db()```, ```open_table()```, ```db_insert()```, ```trx_begin()```, ```trx_commit()```, ```db_find()```, ```db_update```,  ```close_table()```, ```shutdown_db()``` 
+**Available Api lists** : ```init_db()```, ```open_table()```, ```db_insert()```, ```trx_begin()```, ```trx_commit()```, ```db_find()```, ```db_update```,  ```close_table()```, ```shutdown_db()``` <br>
 It can store 128byte sized key-value strings<br> 
 db_delete() operation is not available.<br>
 
