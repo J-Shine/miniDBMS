@@ -5,4 +5,4 @@ This is the mini DataBase Management System consists of file manager layer, buff
 It can store 128byte sized key-value strings to the disk using B+ Tree algorithm.<br> 
 ```db_delete()``` operation is not available.<br>
 
-See the project report(Korean) at the ```final_report``` folder.
+See the project report(Korean) at the ```final_report``` folder to see the full report.
