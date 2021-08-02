@@ -1,7 +1,5 @@
 # miniDBMS
 
-**Caution, this project doesn't work properly.**
-
-This only aims for learning and understanding how Database Management Sysetem works.
+**Caution, this project is not completed.**
 
 See the project report(Korean) at the ```final_report``` folder.
